@@ -1,15 +1,7 @@
-# backend/app/ai_engine/wheat_logic.py
+from app.ai_engine.risk_scoring import calculate_risk_score
+
 
 def analyze_wheat_soil(pH: float, nitrogen_level: str) -> dict:
-    """
-    AI logic for wheat soil health analysis.
-    Parameters:
-        pH (float): Soil pH value
-        nitrogen_level (str): 'low', 'medium', or 'high'
-    Returns:
-        dict: AI-generated soil health analysis
-    """
-
     result = {
         "crop": "Wheat",
         "soil_status": None,
@@ -19,45 +11,47 @@ def analyze_wheat_soil(pH: float, nitrogen_level: str) -> dict:
     }
 
     explanation_parts = []
+    nutrient_deficiencies = []
+    nutrient_excesses = []
 
-    # STEP 1: pH Evaluation (Highest Priority)
+    # STEP 1: pH Evaluation
     if pH < 5.5:
+        pH_status = "severe"
         result["soil_status"] = "Acidic"
-        result["risk_level"] = "High"
+        explanation_parts.append(
+            "Soil pH is too low. Acidic soil reduces nutrient availability for wheat."
+        )
         result["recommendations"].append(
             "Apply lime to correct soil acidity before adding fertilizers"
         )
-        explanation_parts.append(
-            "Soil pH is too low, making it acidic. Acidic soil reduces nutrient availability "
-            "and affects wheat root development."
-        )
-        soil_acidic = True
     else:
+        pH_status = "normal"
         result["soil_status"] = "Normal"
-        soil_acidic = False
 
-    # STEP 2: Nitrogen Evaluation (Only after pH check)
+    # STEP 2: Nitrogen Evaluation
     if nitrogen_level.lower() == "low":
-        if not soil_acidic:
+        nutrient_deficiencies.append("nitrogen")
+        explanation_parts.append(
+            "Nitrogen level is low. Wheat requires nitrogen for healthy leaf growth."
+        )
+        if pH_status == "normal":
             result["recommendations"].append(
                 "Apply nitrogen fertilizer (urea) in split doses"
             )
-        explanation_parts.append(
-            "Nitrogen levels are low. Wheat requires adequate nitrogen for healthy leaf growth "
-            "and proper yield formation."
-        )
 
-    # STEP 3: Risk Adjustment for Normal Soil
-    if not result["recommendations"]:
-        result["risk_level"] = "Low"
-        result["recommendations"].append(
-            "No immediate soil treatment required. Soil conditions are suitable for wheat cultivation."
-        )
-        explanation_parts.append(
-            "Soil pH and nitrogen levels are within acceptable ranges for wheat."
-        )
+    # STEP 3: Risk Scoring
+    risk = calculate_risk_score(
+        pH_status=pH_status,
+        nutrient_deficiencies=nutrient_deficiencies,
+        nutrient_excesses=nutrient_excesses
+    )
 
-    # STEP 4: Final Explanation Assembly
+    result["risk_level"] = risk["risk_level"]
     result["explanation"] = " ".join(explanation_parts)
+
+    if not result["recommendations"]:
+        result["recommendations"].append(
+            "Soil conditions are suitable for wheat cultivation."
+        )
 
     return result

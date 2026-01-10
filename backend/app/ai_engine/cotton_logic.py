@@ -1,16 +1,7 @@
-# backend/app/ai_engine/cotton_logic.py
+from app.ai_engine.risk_scoring import calculate_risk_score
+
 
 def analyze_cotton_soil(pH: float, nitrogen_level: str, potassium_level: str) -> dict:
-    """
-    AI logic for cotton soil health analysis.
-    Parameters:
-        pH (float): Soil pH value
-        nitrogen_level (str): 'low', 'medium', or 'high'
-        potassium_level (str): 'low', 'medium', or 'high'
-    Returns:
-        dict: AI-generated soil health analysis for cotton
-    """
-
     result = {
         "crop": "Cotton",
         "soil_status": None,
@@ -20,76 +11,73 @@ def analyze_cotton_soil(pH: float, nitrogen_level: str, potassium_level: str) ->
     }
 
     explanation_parts = []
-    soil_problem = False
+    nutrient_deficiencies = []
+    nutrient_excesses = []
 
-    # STEP 1: pH Evaluation (Cotton tolerant but not extreme)
+    # STEP 1: pH Evaluation
     if pH < 6.0:
+        pH_status = "moderate"
         result["soil_status"] = "Acidic"
-        result["risk_level"] = "Medium"
-        result["recommendations"].append(
-            "Apply lime to slightly increase soil pH for cotton"
-        )
         explanation_parts.append(
-            "Soil pH is low. Cotton performs better in neutral to slightly alkaline soil."
+            "Soil pH is low. Cotton prefers neutral to slightly alkaline soil."
         )
-        soil_problem = True
-
-    elif pH > 8.5:
-        result["soil_status"] = "Highly Alkaline"
-        result["risk_level"] = "High"
         result["recommendations"].append(
-            "Add organic matter to reduce soil alkalinity"
+            "Apply lime to increase soil pH slightly"
         )
+    elif pH > 8.5:
+        pH_status = "severe"
+        result["soil_status"] = "Highly Alkaline"
         explanation_parts.append(
             "Soil pH is very high. Excess alkalinity reduces nutrient uptake in cotton."
         )
-        soil_problem = True
-
     else:
+        pH_status = "normal"
         result["soil_status"] = "Normal"
 
-    # STEP 2: Potassium Evaluation (CRITICAL for cotton)
+    # STEP 2: Potassium Evaluation
     if potassium_level.lower() == "low":
+        nutrient_deficiencies.append("potassium")
         explanation_parts.append(
-            "Potassium level is low. Potassium is essential for boll development and disease resistance in cotton."
+            "Potassium level is low. It is critical for boll quality in cotton."
         )
-        if not soil_problem:
+        if pH_status == "normal":
             result["recommendations"].append(
-                "Apply potash-based fertilizer to improve potassium levels"
+                "Apply potash-based fertilizer"
             )
 
-    # STEP 3: Nitrogen Evaluation (EXCESS is harmful)
+    # STEP 3: Nitrogen Evaluation
     if nitrogen_level.lower() == "high":
+        nutrient_excesses.append("nitrogen")
         explanation_parts.append(
-            "Nitrogen level is high. Excess nitrogen causes excessive vegetative growth and reduces cotton boll quality."
+            "Nitrogen level is high. Excess nitrogen reduces boll formation in cotton."
         )
         result["recommendations"].append(
-            "Avoid additional nitrogen application and monitor crop growth"
+            "Avoid additional nitrogen application"
         )
 
     elif nitrogen_level.lower() == "low":
+        nutrient_deficiencies.append("nitrogen")
         explanation_parts.append(
-            "Nitrogen level is low. Cotton requires balanced nitrogen for healthy growth."
+            "Nitrogen level is low. Cotton requires balanced nitrogen."
         )
-        if not soil_problem:
+        if pH_status == "normal":
             result["recommendations"].append(
                 "Apply nitrogen fertilizer carefully in controlled amounts"
             )
 
-    # STEP 4: Risk Adjustment
-    if result["recommendations"]:
-        if not result["risk_level"]:
-            result["risk_level"] = "Medium"
-    else:
-        result["risk_level"] = "Low"
-        result["recommendations"].append(
-            "Soil conditions are suitable for cotton cultivation. No immediate action required."
-        )
-        explanation_parts.append(
-            "Soil pH and nutrient levels are within acceptable ranges for cotton."
-        )
+    # STEP 4: Risk Scoring
+    risk = calculate_risk_score(
+        pH_status=pH_status,
+        nutrient_deficiencies=nutrient_deficiencies,
+        nutrient_excesses=nutrient_excesses
+    )
 
-    # STEP 5: Final Explanation
+    result["risk_level"] = risk["risk_level"]
     result["explanation"] = " ".join(explanation_parts)
+
+    if not result["recommendations"]:
+        result["recommendations"].append(
+            "Soil conditions are suitable for cotton cultivation."
+        )
 
     return result

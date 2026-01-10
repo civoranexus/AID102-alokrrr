@@ -1,16 +1,7 @@
-# backend/app/ai_engine/rice_logic.py
+from app.ai_engine.risk_scoring import calculate_risk_score
+
 
 def analyze_rice_soil(pH: float, nitrogen_level: str, potassium_level: str) -> dict:
-    """
-    AI logic for rice soil health analysis.
-    Parameters:
-        pH (float): Soil pH value
-        nitrogen_level (str): 'low', 'medium', or 'high'
-        potassium_level (str): 'low', 'medium', or 'high'
-    Returns:
-        dict: AI-generated soil health analysis for rice
-    """
-
     result = {
         "crop": "Rice",
         "soil_status": None,
@@ -20,68 +11,64 @@ def analyze_rice_soil(pH: float, nitrogen_level: str, potassium_level: str) -> d
     }
 
     explanation_parts = []
-    soil_problem = False
+    nutrient_deficiencies = []
+    nutrient_excesses = []
 
-    # STEP 1: pH Evaluation (Highest Priority)
+    # STEP 1: pH Evaluation
     if pH < 5.0:
+        pH_status = "severe"
         result["soil_status"] = "Highly Acidic"
-        result["risk_level"] = "High"
         result["recommendations"].append(
             "Apply lime to slightly raise soil pH before nutrient application"
         )
         explanation_parts.append(
-            "Soil pH is very low. Highly acidic soil affects root function and nutrient uptake in rice."
+            "Soil pH is very low, which affects nutrient uptake in rice."
         )
-        soil_problem = True
-
     elif pH > 7.5:
+        pH_status = "moderate"
         result["soil_status"] = "Alkaline"
-        result["risk_level"] = "Medium"
-        result["recommendations"].append(
-            "Apply organic matter to improve soil balance"
-        )
         explanation_parts.append(
-            "Soil pH is high. Alkaline soil can reduce micronutrient availability for rice."
+            "Soil pH is high. Alkaline soil reduces micronutrient availability in rice."
         )
-        soil_problem = True
-
     else:
+        pH_status = "normal"
         result["soil_status"] = "Normal"
 
     # STEP 2: Nitrogen Evaluation
     if nitrogen_level.lower() == "low":
+        nutrient_deficiencies.append("nitrogen")
         explanation_parts.append(
-            "Nitrogen level is low. Rice requires high nitrogen for vegetative growth and yield formation."
+            "Nitrogen level is low. Rice requires high nitrogen for vegetative growth."
         )
-        if not soil_problem:
+        if pH_status == "normal":
             result["recommendations"].append(
                 "Apply nitrogen fertilizer (urea) in split doses"
             )
 
     # STEP 3: Potassium Evaluation
     if potassium_level.lower() == "low":
+        nutrient_deficiencies.append("potassium")
         explanation_parts.append(
-            "Potassium level is low. Potassium improves disease resistance and grain quality in rice."
+            "Potassium level is low. It increases disease resistance and grain quality in rice."
         )
-        if not soil_problem:
+        if pH_status == "normal":
             result["recommendations"].append(
-                "Apply potash-based fertilizer to improve potassium levels"
+                "Apply potash-based fertilizer"
             )
 
-    # STEP 4: Risk Adjustment
-    if result["recommendations"]:
-        if not result["risk_level"]:
-            result["risk_level"] = "Medium"
-    else:
-        result["risk_level"] = "Low"
-        result["recommendations"].append(
-            "Soil conditions are suitable for rice cultivation. No immediate action required."
-        )
-        explanation_parts.append(
-            "Soil pH and nutrient levels are within acceptable ranges for rice."
-        )
+    # STEP 4: Risk Scoring
+    risk = calculate_risk_score(
+        pH_status=pH_status,
+        nutrient_deficiencies=nutrient_deficiencies,
+        nutrient_excesses=nutrient_excesses
+    )
 
-    # STEP 5: Final Explanation
+    result["risk_level"] = risk["risk_level"]
     result["explanation"] = " ".join(explanation_parts)
+
+    if not result["recommendations"]:
+        result["recommendations"].append(
+            "Soil conditions are suitable for rice cultivation."
+        )
 
     return result
