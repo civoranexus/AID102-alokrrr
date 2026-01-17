@@ -13,3 +13,10 @@ app = FastAPI(
 app.include_router(soil_router)
 app.include_router(admin_router)
 app.include_router(user_router)
+
+@app.get("/")
+def root():
+    return {
+        "message": "SoilSense API is running",
+        "docs": "/docs"
+    }
