@@ -8,17 +8,28 @@ function Dashboard() {
 
   return (
     <main className="container">
-      <h1 style={{ color: "black" }}>SoilSense Dashboard</h1>
-      <p style={{ textAlign: "center", marginBottom: "30px", opacity: 0.85 }}>
-        AI-powered soil health analysis & crop-specific recommendations
-      </p>
+      {/* HERO */}
+      <section className="hero">
+        <h1>SoilSense AI</h1>
+        <p>
+          Intelligent soil health analysis using AI-driven agronomic rules
+        </p>
+      </section>
 
+      {/* INPUT CARD */}
+      <section className="card lift">
+        <SoilForm onResult={setResult} />
+      </section>
 
-      <SoilForm onResult={setResult} />
-
+      {/* ALERT */}
       <AlertBox risk={result?.risk_level} />
 
-      <AnalysisResult result={result} />
+      {/* RESULT */}
+      {result && (
+        <section className="card lift">
+          <AnalysisResult result={result} />
+        </section>
+      )}
     </main>
   );
 }
