@@ -1,26 +1,34 @@
+import SoilHealthBar from "./SoilHealthBar.jsx";
+import NutrientChart from "./NutrientChart.jsx";
+
 function AnalysisResult({ result }) {
   if (!result) return null;
 
+  // Simple derived health score (explainable)
+  const healthScore =
+    result.risk_level === "Low" ? 80 :
+    result.risk_level === "Medium" ? 55 :
+    30;
+
   return (
-    <div className="card">
-      <h2>AI Analysis</h2>
+    <div>
+      <h2>AI Soil Analysis</h2>
 
-      <p>
-        <strong>Crop:</strong> {result.crop}
-      </p>
+      <p><strong>Crop:</strong> {result.crop}</p>
+      <p><strong>Soil Status:</strong> {result.soil_status}</p>
 
-      <p>
-        <strong>Soil Status:</strong> {result.soil_status}
-      </p>
+      <span className={`risk ${result.risk_level.toLowerCase()}`}>
+        {result.risk_level} Risk
+      </span>
 
-      <p className={`risk ${result.risk_level.toLowerCase()}`}>
-        Risk Level: {result.risk_level}
-      </p>
+      <SoilHealthBar score={healthScore} />
+
+      <NutrientChart nitrogen={result.soil_data?.nitrogen || "medium"} />
 
       <h3>Recommendations</h3>
       <ul>
-        {result.recommendations.map((rec, index) => (
-          <li key={index}>{rec}</li>
+        {result.recommendations.map((rec, i) => (
+          <li key={i}>{rec}</li>
         ))}
       </ul>
 
