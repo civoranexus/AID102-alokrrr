@@ -166,3 +166,16 @@ li {
 canvas {
   max-height: 260px;
 }
+
+small {
+  display: block;
+  margin-top: 6px;
+  opacity: 0.85;
+}
+.ph-indicator {
+  margin: 20px 0;
+  padding: 15px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  text-align: center;
+}

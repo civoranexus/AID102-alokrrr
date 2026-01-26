@@ -1,3 +1,4 @@
+import PHIndicator from "./PHIndicator.jsx";
 import SoilHealthBar from "./SoilHealthBar.jsx";
 import NutrientChart from "./NutrientChart.jsx";
 
@@ -22,6 +23,12 @@ function AnalysisResult({ result }) {
       </span>
 
       <SoilHealthBar score={healthScore} />
+
+      <PHIndicator
+        pH={result.soil_data?.pH}
+        crop={result.crop}
+       />
+
 
       <NutrientChart nitrogen={result.soil_data?.nitrogen || "medium"} />
 
